@@ -189,7 +189,7 @@ public class Network {
         alert.show();
     }
 
-    public void sendChangeUsername(String newUsername, String password) {
+    public void sendUpdateUsername(String newUsername, String password) {
         try {
             out.writeUTF(String.format("%s %s %s %s", UPDATE_USERNAME_PREFIX, username, password, newUsername));
         } catch (IOException e) {
@@ -197,7 +197,7 @@ public class Network {
         }
     }
 
-    public void sendChangePassword(String password, String newPassword) {
+    public void sendUpdatePassword(String password, String newPassword) {
         try {
             out.writeUTF(String.format("%s %s %s %s",UPDATE_PASSWORD_PREFIX, username, password, newPassword));
         } catch (IOException e) {
