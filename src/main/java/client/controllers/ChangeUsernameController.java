@@ -23,7 +23,7 @@ public class ChangeUsernameController {
         String passwordFieldText = passwordField.getText().trim();
         if (newUsernameText.length() == 0 || passwordFieldText.length() == 0)
             return;
-        network.sendChangeUsername(newUsernameText, passwordFieldText);
+        network.sendUpdateUsername(newUsernameText, passwordFieldText);
     }
 
 

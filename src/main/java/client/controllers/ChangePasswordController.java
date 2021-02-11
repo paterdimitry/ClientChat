@@ -25,7 +25,7 @@ public class ChangePasswordController {
         String password = pastPasswordField.getText().trim();
         String newPassword = passwordField1.getText().trim();
         if (newPassword.equals(passwordField2.getText().trim())) {
-            network.sendChangePassword(password, newPassword);
+            network.sendUpdatePassword(password, newPassword);
         } else {
             showNotEquallyPasswords();
         }
