@@ -1,10 +1,13 @@
 package client.controllers;
 
+import client.views.ChatClient;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import client.models.Network;
+
+import java.io.IOException;
 
 public class ChatController {
 
@@ -74,6 +77,16 @@ public class ChatController {
             inputField.setText(String.format("%s %s ", Network.PRIVATE_MSG_CMD_PREFIX, recipient));
             inputField.requestFocus();
         }
+    }
+
+    @FXML
+    void openChangeUsernameWindow() throws IOException {
+        ChatClient.createChangeUsernameWindow();
+    }
+
+    @FXML
+    void openChangePasswordWindow() throws IOException {
+        ChatClient.createChangePasswordWindow();
     }
 
     @FXML
