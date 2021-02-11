@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="260.0" minWidth="320.0" prefHeight="480.0" prefWidth="640.0" scaleShape="false" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.controllers.ChatController">
    <children>
@@ -12,7 +20,12 @@
             <menus>
               <Menu mnemonicParsing="false" text="Файл">
                 <items>
-                  <MenuItem mnemonicParsing="false" text="Настройки" />
+                        <Menu mnemonicParsing="false" text="Настройки">
+                          <items>
+                            <MenuItem mnemonicParsing="false" onAction="#openChangeUsernameWindow" text="Изменить никнейм" />
+                        <MenuItem mnemonicParsing="false" onAction="#openChangePasswordWindow" text="Изменить пароль" />
+                          </items>
+                        </Menu>
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem mnemonicParsing="false" onAction="#doExit" text="Выход" />
                 </items>

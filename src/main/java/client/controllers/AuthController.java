@@ -7,6 +7,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
+import java.io.IOException;
+
 public class AuthController {
 
     @FXML
@@ -27,13 +29,18 @@ public class AuthController {
         }
         String authErrorMessage = network.sendAuthMessage(login, password);
         if (authErrorMessage == null) {
-            mainChatClient.openChat();
+            ChatClient.openChat();
         } else {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Ошибка авторизации");
             alert.setContentText(authErrorMessage);
             alert.show();
         }
+    }
+
+    @FXML
+    void doRegistration() throws IOException {
+        ChatClient.setAuthScene("RegistrationWindow");
     }
 
     public void setNetwork(Network network) {

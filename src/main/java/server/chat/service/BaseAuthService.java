@@ -1,7 +1,9 @@
-package server.chat.auth;
+package server.chat.service;
 
 import server.chat.User;
+import server.chat.service.interfaces.AuthService;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public class BaseAuthService implements AuthService {

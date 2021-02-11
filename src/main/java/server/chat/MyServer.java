@@ -1,6 +1,9 @@
 package server.chat;
 
-import server.chat.auth.BaseAuthService;
+import server.chat.service.classes.DBAuthService;
+import server.chat.service.classes.DBChangePasswordService;
+import server.chat.service.classes.DBChangeUsernameService;
+import server.chat.service.classes.DBRegService;
 import server.chat.handler.ClientHandler;
 
 import java.io.IOException;
@@ -12,13 +15,19 @@ import java.util.List;
 public class MyServer {
 
     private final ServerSocket serverSocket;
-    private final BaseAuthService authService;
+    private final DBAuthService authService;
+    private final DBRegService regService;
+    private final DBChangeUsernameService changeUsernameService;
+    private final DBChangePasswordService changePasswordService;
 
     private final List<ClientHandler> clients = new ArrayList<>();
 
     public MyServer(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
-        this.authService = new BaseAuthService();
+        this.authService = new DBAuthService();
+        this.regService = new DBRegService();
+        this.changeUsernameService = new DBChangeUsernameService();
+        this.changePasswordService = new DBChangePasswordService();
     }
 
     public void start() {
@@ -41,10 +50,6 @@ public class MyServer {
         clientHandler.handle();
     }
 
-    public BaseAuthService getAuthService() {
-        return authService;
-    }
-
     public synchronized void subscribe(ClientHandler clientHandler) throws IOException {
         clients.add(clientHandler);
         broadcastUserList();
@@ -60,6 +65,7 @@ public class MyServer {
         }
         broadcastServerMessage(clientHandler, "UNSUB");
     }
+
 
     public synchronized boolean isUsernameBusy(String username) {
         for (ClientHandler client : clients) {
@@ -86,6 +92,7 @@ public class MyServer {
     }
 
     //ретранслятор для общих сообщений
+
     public synchronized void broadcastMessage(ClientHandler sender, String message) throws IOException {
         for (ClientHandler client : clients) {
             if (client == sender)
@@ -94,8 +101,19 @@ public class MyServer {
                 client.sendMessage(sender.getUsername(), message);
         }
     }
+    public void broadcastUpdateUsernameMessage(ClientHandler user, String lastUsername, String username) {
+        for (ClientHandler client : clients) {
+            if (user != client) {
+                try {
+                    client.sendServerMessage(lastUsername + " сменил имя пользователя на " + username);
+                } catch (IOException e) {
+                    System.out.println("Ошибка рассылки серверных сообщений");
+                }
+            }
+        }
+    }
 
-    //ретранслятор для личных сообщений
+//ретранслятор для личных сообщений
     public synchronized void broadcastMessage(ClientHandler sender, String recipient, String message) throws IOException {
         boolean flag = false;
         for (ClientHandler client : clients) {
@@ -125,5 +143,19 @@ public class MyServer {
             client.sendStopServerMessage();
         }
         System.exit(0);
+    }
+
+    public DBAuthService getAuthService() {
+        return authService;
+    }
+
+    public DBRegService getRegService() { return regService; }
+
+    public DBChangeUsernameService getChangeUsernameService() {
+        return changeUsernameService;
+    }
+
+    public DBChangePasswordService getChangePasswordService() {
+        return changePasswordService;
     }
 }
