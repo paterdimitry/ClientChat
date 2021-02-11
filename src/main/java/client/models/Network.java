@@ -1,6 +1,9 @@
 package client.models;
 
+import client.controllers.ChangePasswordController;
+import client.controllers.ChangeUsernameController;
 import client.controllers.ChatController;
+import client.views.ChatClient;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
@@ -19,6 +22,18 @@ public class Network {
     private static final String SERVER_MSG_CMD_PREFIX = "/serverMsg"; // + msg
     private static final String END_CMD_PREFIX = "/end"; //
     private static final String USER_LIST_CMD = "/usrlst";
+
+    private static final String UPDATE_USERNAME_PREFIX = "/updusrname";
+    private static final String UPDATE_USERNAME_OK_PREFIX = "/updusrnameok";
+    private static final String UPDATE_USERNAME_ERR_PREFIX = "/updusrnameerr";
+
+    private static final String REG_PREFIX = "/reg";
+    private static final String REGERR_PREFIX = "/regerr";
+    private static final String REGOK_PREFIX = "/regok";
+
+    private static final String UPDATE_PASSWORD_PREFIX = "/updpswrd"; // + username + password + newPassword
+    private static final String UPDATE_PASSWORD_OK_PREFIX = "/updpswrdok"; //
+    private static final String UPDATE_PASSWORD_ERR_PREFIX = "/updpswrderr"; // + message
 
     private static final String DEFAULT_SERVER_HOST = "localhost";
     private static final int DEFAULT_SERVER_PORT = 8888;
@@ -85,7 +100,14 @@ public class Network {
                             case PRIVATE_MSG_CMD_PREFIX -> controller.sendMessageToList(String.format("%S", message));
                             case USER_LIST_CMD -> refreshUserList(controller, message);
                             case END_CMD_PREFIX -> closeServer(controller);
-
+                            case UPDATE_USERNAME_OK_PREFIX -> {
+                                username = message;
+                                ChangeUsernameController.okUpdateUsername(message);
+                                ChatClient.changeStageTitle();
+                            }
+                            case UPDATE_USERNAME_ERR_PREFIX -> ChangeUsernameController.errorUpdateUsername(message);
+                            case UPDATE_PASSWORD_OK_PREFIX -> ChangePasswordController.okUpdatePassword();
+                            case UPDATE_PASSWORD_ERR_PREFIX -> ChangePasswordController.errorUpdatePassword(message);
                         }
                     });
                 }
@@ -106,6 +128,7 @@ public class Network {
             controller.addClientToList(user); //и заполняем заново
         }
     }
+
     public String sendAuthMessage(String login, String password) {
         try {
             out.writeUTF(String.format("%s %s %s", AUTH_CMD_PREFIX, login, password));
@@ -116,6 +139,21 @@ public class Network {
             } else {
                 return response.split("\\s+", 2)[1];
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
+    }
+
+    public String sendRegMessage(String login, String password, String username) {
+        try {
+            out.writeUTF(String.format("%s %s %s %s", REG_PREFIX, login, password, username));
+            String response = in.readUTF();
+            if (response.startsWith(REGOK_PREFIX))
+                return null;
+            if (response.startsWith(REGERR_PREFIX))
+                return response.split("\\s+", 2)[1];
+            return "Неизвестная ошибка";
         } catch (IOException e) {
             e.printStackTrace();
             return e.getMessage();
@@ -149,5 +187,21 @@ public class Network {
         alert.setTitle("Ошибка соединения");
         alert.setContentText("Соединение прервано");
         alert.show();
+    }
+
+    public void sendUpdateUsername(String newUsername, String password) {
+        try {
+            out.writeUTF(String.format("%s %s %s %s", UPDATE_USERNAME_PREFIX, username, password, newUsername));
+        } catch (IOException e) {
+            ChangeUsernameController.errorUpdateUsername("Ошибка смены имени");
+        }
+    }
+
+    public void sendUpdatePassword(String password, String newPassword) {
+        try {
+            out.writeUTF(String.format("%s %s %s %s",UPDATE_PASSWORD_PREFIX, username, password, newPassword));
+        } catch (IOException e) {
+            ChangePasswordController.errorUpdatePassword("Ошибка смены пароля");
+        }
     }
 }
