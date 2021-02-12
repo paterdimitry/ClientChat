@@ -5,12 +5,13 @@ import client.controllers.ChangeUsernameController;
 import client.controllers.ChatController;
 import client.views.ChatClient;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class Network {
 
@@ -46,6 +47,9 @@ public class Network {
     private final String host;
     private final int port;
     private String username;
+
+    File logsFile;
+    private String logsFilePath = "src/main/resources/logs/logs_";
 
     public Network(String host, int port) {
         this.host = host;
@@ -86,6 +90,7 @@ public class Network {
 
     //ожидание сообщения в непрерывном потоке
     public void waitMessage(ChatController controller) {
+        getLogsMessages(controller);
         Thread thread = new Thread(() -> {
             try {
                 while (true) {
@@ -135,6 +140,12 @@ public class Network {
             String response = in.readUTF();
             if (response.startsWith(AUTHOK_CMD_PREFIX)) {
                 this.username = response.split("\\s+", 2)[1];
+                //создаем имя файла и сам файл
+                this.logsFilePath += username + ".txt";
+                this.logsFile = new File(logsFilePath);
+                if (!logsFile.exists())
+                    logsFile.createNewFile();
+
                 return null;
             } else {
                 return response.split("\\s+", 2)[1];
@@ -199,9 +210,44 @@ public class Network {
 
     public void sendUpdatePassword(String password, String newPassword) {
         try {
-            out.writeUTF(String.format("%s %s %s %s",UPDATE_PASSWORD_PREFIX, username, password, newPassword));
+            out.writeUTF(String.format("%s %s %s %s", UPDATE_PASSWORD_PREFIX, username, password, newPassword));
         } catch (IOException e) {
             ChangePasswordController.errorUpdatePassword("Ошибка смены пароля");
         }
     }
+
+    public void writeMessageToFile(String message) {
+
+        try (FileWriter writer = new FileWriter(logsFile, true)) {
+            writer.write(message + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getLogsMessages(ChatController controller) {
+        ArrayList<String> messageList = new ArrayList<>();
+        String strLine;
+        int counterLines = 0;
+        int starti = 0;
+        //загружаем построчно сообщения и считаем их количество
+        try (BufferedReader reader = new BufferedReader(new FileReader(logsFile))) {
+            while (((strLine = reader.readLine()) != null)) {
+                messageList.add(strLine);
+                counterLines++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //находим номер строки, с которой выводим на экран
+        if (counterLines > 100)
+            starti = counterLines - 100;
+        //выводим сообщения на ListView
+        for (int i = starti; i < messageList.size(); i++) {
+            controller.getMsgList().add(messageList.get(i));
+        }
+        controller.scrollDown(); //прокручиваем ListView вниз
+    }
+
+
 }

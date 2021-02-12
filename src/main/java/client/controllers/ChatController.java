@@ -26,12 +26,12 @@ public class ChatController {
         this.network = network;
     }
 
-    private final ObservableList<String> msgList = FXCollections.observableArrayList("Добро пожаловать в чат!");
+    private final ObservableList<String> msgList = FXCollections.observableArrayList();
 
     private ObservableList<String> prsnList = FXCollections.observableArrayList();
 
     @FXML
-    void initialize() {
+    void initialize() throws IOException {
         listViewMsg.setItems(msgList);
 
         listViewPerson.setItems(prsnList);
@@ -52,6 +52,7 @@ public class ChatController {
                 }
             }
         });
+
     }
 
     @FXML
@@ -104,8 +105,10 @@ public class ChatController {
     }
 
 
-    public void sendMessageToList(String message) {
+    public void sendMessageToList(String message)  {
         listViewMsg.getItems().add(message);
+        network.writeMessageToFile(message);
+        listViewMsg.scrollTo(listViewMsg.getItems().size() - 1);
     }
 
     public void addClientToList(String username) {
@@ -115,5 +118,13 @@ public class ChatController {
 
     public void resetUserList() {
         listViewPerson.getItems().clear();
+    }
+
+    public ObservableList<String> getMsgList() {
+        return msgList;
+    }
+
+    public void scrollDown() {
+        listViewMsg.scrollTo(listViewMsg.getItems().size() - 1);
     }
 }

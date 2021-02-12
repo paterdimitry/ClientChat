@@ -101,7 +101,7 @@ public class MyServer {
                 client.sendMessage(sender.getUsername(), message);
         }
     }
-    public void broadcastUpdateUsernameMessage(ClientHandler user, String lastUsername, String username) {
+    public synchronized void broadcastUpdateUsernameMessage(ClientHandler user, String lastUsername, String username) {
         for (ClientHandler client : clients) {
             if (user != client) {
                 try {
@@ -138,7 +138,7 @@ public class MyServer {
         }
     }
 
-    public void stop() throws IOException {
+    public synchronized void stop() throws IOException {
         for (ClientHandler client : clients) {
             client.sendStopServerMessage();
         }
