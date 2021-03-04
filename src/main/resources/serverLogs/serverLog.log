@@ -1,0 +1,6 @@
+февр. 26, 2021 2:41:29 PM server.chat.MyServer start
+INFO: Сервер запущен
+февр. 26, 2021 2:41:35 PM server.chat.MyServer waitAndConnectClient
+INFO: Установлено соединение с клиентом, ожидаем авторизацию
+февр. 26, 2021 2:42:00 PM server.chat.handler.ClientHandler lambda$handle$0
+INFO: Клиент Феодор_Михайлович отключился

@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     private final MyServer myServer;
@@ -20,6 +21,8 @@ public class ClientHandler {
     DataInputStream in;
     DataOutputStream out;
     SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+
+    protected final Logger logger;
 
     private static final String AUTH_CMD_PREFIX = "/auth"; // + login + pass
     private static final String AUTHOK_CMD_PREFIX = "/authok"; // + username
@@ -47,6 +50,7 @@ public class ClientHandler {
     public ClientHandler(MyServer myServer, Socket socket) {
         this.myServer = myServer;
         this.clientSocket = socket;
+        this.logger = myServer.getServerLogger();
     }
 
     public void handle() throws IOException {
@@ -59,6 +63,7 @@ public class ClientHandler {
                 readMessage();
             } catch (IOException e) {
                 myServer.unsubscribe(this);
+                logger.info("Клиент " + username + " отключился");
             }
         }).start();
     }
@@ -72,11 +77,13 @@ public class ClientHandler {
                     break;
                 else
                     out.writeUTF(AUTHERR_CMD_PREFIX + " Ошибка авторизации!");
+                logger.warning("Клиент не смог пройти авторизацию");
             } else if (message.startsWith(REG_PREFIX)) {
                 processRegCommand(message);
 
             } else {
                 out.writeUTF(REGERR_PREFIX + " Ошибка регистрации!");
+                logger.warning("Клиент не смог зарегистрироваться");
             }
         }
     }
@@ -98,11 +105,13 @@ public class ClientHandler {
                 out.writeUTF(REGOK_PREFIX);
                 return;
             } else {
-                out.writeUTF(REGERR_PREFIX + " Ошибка решистрации");
+                out.writeUTF(REGERR_PREFIX + " Ошибка регистрации");
+                logger.warning("Клиент не смог зарегистрироваться");
                 return;
             }
         } catch (SQLException e) {
-            out.writeUTF(REGERR_PREFIX + " Ошибка решистрации");
+            out.writeUTF(REGERR_PREFIX + " Ошибка регистрации");
+            logger.warning("Клиент не смог зарегистрироваться из-за ошибки базы данных");
             return;
         }
     }
@@ -131,6 +140,7 @@ public class ClientHandler {
             }
         } catch (SQLException e) {
             out.writeUTF(AUTHERR_CMD_PREFIX + " Ошибка авторизации");
+            logger.warning("Клиент не смог пройти авторизацию из-за ошибки базы данных");
             return false;
         }
     }
@@ -183,6 +193,7 @@ public class ClientHandler {
             }
         } catch (SQLException e) {
             out.writeUTF(UPDATE_USERNAME_ERR_PREFIX + " Ошибка смены username");
+            logger.warning("Клиент не смог сменить имя из-за ошибки базы данных");
         }
     }
 
@@ -203,6 +214,7 @@ public class ClientHandler {
                 out.writeUTF(UPDATE_PASSWORD_ERR_PREFIX + " Введен неверный пароль");
         } catch (SQLException e) {
             out.writeUTF(UPDATE_PASSWORD_ERR_PREFIX + " Ошибка смены пароля");
+            logger.warning("Клиент не смог сменить пароль из-за ошибки базы данных");
         }
     }
 

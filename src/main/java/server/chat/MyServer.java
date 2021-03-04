@@ -1,16 +1,15 @@
 package server.chat;
 
-import server.chat.service.classes.DBAuthService;
-import server.chat.service.classes.DBChangePasswordService;
-import server.chat.service.classes.DBChangeUsernameService;
-import server.chat.service.classes.DBRegService;
+import server.chat.service.classes.*;
 import server.chat.handler.ClientHandler;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.*;
 
 public class MyServer {
 
@@ -22,6 +21,14 @@ public class MyServer {
 
     private final List<ClientHandler> clients = new ArrayList<>();
 
+    //создаем два логгера: для чата и для серверных сообщений
+    protected final Logger serverLogger = Logger.getLogger("server");
+    protected final Logger chatLogger = Logger.getLogger("chat");
+
+    public Logger getServerLogger() {
+        return serverLogger;
+    }
+
     public MyServer(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.authService = new DBAuthService();
@@ -31,21 +38,55 @@ public class MyServer {
     }
 
     public void start() {
-        System.out.println("Server started!");
-
+        startServerLogger();
+        serverLogger.info("Сервер запущен");
+        startChatLogger();
         try {
             while (true) {
                 waitAndConnectClient();
             }
         } catch (IOException ioException) {
-            ioException.printStackTrace();
+            serverLogger.severe("Клиенту не удалось присоединиться к серверу");
         }
     }
 
+    private void startServerLogger() {
+        //описываем параметры логирования
+        serverLogger.setLevel(Level.ALL);
+        try {
+            Handler handler = new FileHandler("src/main/resources/serverLogs/serverLog.log");
+            handler.setFormatter(new SimpleFormatter());
+            handler.setLevel(Level.ALL);
+            serverLogger.addHandler(handler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void startChatLogger() {
+        chatLogger.setLevel(Level.ALL);
+        try {
+            Handler handler = new FileHandler("src/main/resources/serverLogs/chatLog.log");
+            //описываем формат логирования переписки для более удобного чтения
+            handler.setFormatter(new Formatter() {
+                @Override
+                public String format(LogRecord record) {
+                    return record.getLevel() + " " + (new Date(record.getMillis())).toString() + " " + record.getMessage() + "\n";
+                }
+            });
+            handler.setLevel(Level.ALL);
+            chatLogger.addHandler(handler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //убираем вывод логов переписки в консоль
+        chatLogger.setUseParentHandlers(false);
+
+    }
+
     private void waitAndConnectClient() throws IOException {
-        System.out.println("Waiting connection");
         Socket socket = serverSocket.accept();
-        System.out.println("Client connected");
+        serverLogger.info("Установлено соединение с клиентом, ожидаем авторизацию");
         ClientHandler clientHandler = new ClientHandler(this, socket);
         clientHandler.handle();
     }
@@ -54,6 +95,7 @@ public class MyServer {
         clients.add(clientHandler);
         broadcastUserList();
         broadcastServerMessage(clientHandler, "SUB");
+        chatLogger.info(clientHandler.getUsername() + " подключился к чату");
     }
 
     public synchronized void unsubscribe(ClientHandler clientHandler) {
@@ -61,11 +103,11 @@ public class MyServer {
         try {
             broadcastUserList();
         } catch (IOException e) {
-            e.printStackTrace();
+            serverLogger.warning("Ошибка передачи списка клиентов");
         }
         broadcastServerMessage(clientHandler, "UNSUB");
+        chatLogger.info(clientHandler.getUsername() + " подключился к чату");
     }
-
 
     public synchronized boolean isUsernameBusy(String username) {
         for (ClientHandler client : clients) {
@@ -85,15 +127,14 @@ public class MyServer {
                         case "UNSUB" -> client.sendServerMessage(user.getUsername() + " покинул чат");
                     }
                 } catch (IOException e) {
-                    System.out.println("Ошибка рассылки серверных сообщений");
+                    serverLogger.warning("Ошибка рассылки серверных сообщений о подключении или отключении клиента");
                 }
             }
         }
     }
 
-    //ретранслятор для общих сообщений
-
     public synchronized void broadcastMessage(ClientHandler sender, String message) throws IOException {
+        chatLogger.fine(sender.getUsername() + ": " + message);
         for (ClientHandler client : clients) {
             if (client == sender)
                 client.sendMessage(message);
@@ -101,21 +142,24 @@ public class MyServer {
                 client.sendMessage(sender.getUsername(), message);
         }
     }
+
     public synchronized void broadcastUpdateUsernameMessage(ClientHandler user, String lastUsername, String username) {
         for (ClientHandler client : clients) {
             if (user != client) {
                 try {
                     client.sendServerMessage(lastUsername + " сменил имя пользователя на " + username);
+                    serverLogger.info(lastUsername + " сменил имя пользователя на " + username);
                 } catch (IOException e) {
-                    System.out.println("Ошибка рассылки серверных сообщений");
+                    serverLogger.warning("Ошибка рассылки серверных сообщений о смене имени пользователя");
                 }
             }
         }
     }
 
-//ретранслятор для личных сообщений
+    //ретранслятор для личных сообщений
     public synchronized void broadcastMessage(ClientHandler sender, String recipient, String message) throws IOException {
         boolean flag = false;
+        chatLogger.fine(sender.getUsername() + " -> " + recipient + ": " + message);
         for (ClientHandler client : clients) {
             if (client.getUsername().equals(recipient)) {
                 client.sendPrivateMessage(sender.getUsername(), recipient, message); //находим адресата и отправляем сообщение
@@ -142,6 +186,7 @@ public class MyServer {
         for (ClientHandler client : clients) {
             client.sendStopServerMessage();
         }
+        serverLogger.info("Сервер отключен по команде клиента");
         System.exit(0);
     }
 
@@ -149,7 +194,9 @@ public class MyServer {
         return authService;
     }
 
-    public DBRegService getRegService() { return regService; }
+    public DBRegService getRegService() {
+        return regService;
+    }
 
     public DBChangeUsernameService getChangeUsernameService() {
         return changeUsernameService;
